@@ -1,0 +1,24 @@
+---
+- name: Lister les VMs du vCenter
+  hosts: vcenter
+  gather_facts: false
+  tasks:
+    - name: Récupérer la liste des VMs
+      community.vmware.vmware_vm_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs }}"
+        vm_type: vm
+      register: vm_list
+
+    - name: Afficher les VMs (nom, état, hôte ESXi, OS invité)
+      ansible.builtin.debug:
+        msg: >-
+          {{ item.guest_name }} |
+          power={{ item.power_state }} |
+          esxi={{ item.esxi_hostname }} |
+          ip={{ item.ip_address | default('N/A', true) }}
+      loop: "{{ vm_list.virtual_machines }}"
+      loop_control:
+        label: "{{ item.guest_name }}"
