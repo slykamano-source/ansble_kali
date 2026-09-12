@@ -1,0 +1,5 @@
+---
+# Variables en clair, sans donnée sensible. Elles référencent les vraies valeurs
+# définies dans vault.yml (chiffré).
+example_password: "{{ vault_example_password }}"
+db_password: "{{ vault_db_password }}"
