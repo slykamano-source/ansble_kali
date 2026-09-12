@@ -1,0 +1,3 @@
+---
+ansible_password: "{{ vault_10_20_1_12_ansible_password }}"
+ansible_become_password: "{{ vault_10_20_1_12_ansible_password }}"
