@@ -1,0 +1,6 @@
+---
+- name: Démonstration du rôle example
+  hosts: local
+  gather_facts: true
+  roles:
+    - example

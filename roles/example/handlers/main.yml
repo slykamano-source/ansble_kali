@@ -1,0 +1,5 @@
+---
+# handlers file for example
+- name: Signaler la mise à jour du message
+  ansible.builtin.debug:
+    msg: "Le fichier {{ example_dest }} a été mis à jour."

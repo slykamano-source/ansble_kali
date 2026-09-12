@@ -1,0 +1,14 @@
+---
+# tasks file for example
+- name: S'assurer que le répertoire de destination existe
+  ansible.builtin.file:
+    path: "{{ example_dest | dirname }}"
+    state: directory
+    mode: "0755"
+
+- name: Déployer le fichier de message depuis le template
+  ansible.builtin.template:
+    src: message.j2
+    dest: "{{ example_dest }}"
+    mode: "0644"
+  notify: Signaler la mise à jour du message

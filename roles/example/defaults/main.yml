@@ -1,0 +1,4 @@
+---
+# defaults file for example
+example_message: "Hello from the example role!"
+example_dest: /tmp/example_role_output.txt
