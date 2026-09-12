@@ -1,0 +1,53 @@
+---
+- name: Créer une VM dans vCenter
+  hosts: vcenter
+  gather_facts: false
+  vars:
+    vm_datacenter: "vSan DataCenter"
+    vm_cluster: "EASY-CLUSTER"
+    vm_datastore: "datastore"
+    vm_folder: "/vSan DataCenter/vm"
+    vm_network: "VM Network"
+    vm_guest_id: "ubuntu64Guest"
+    vm_num_cpus: 2
+    vm_memory_mb: 2048
+    vm_disk_gb: 20
+    vm_state: poweredoff
+  tasks:
+    - name: Vérifier que le nom de la VM a été fourni
+      ansible.builtin.assert:
+        that:
+          - vm_name is defined
+          - vm_name | length > 0
+        fail_msg: >-
+          Merci de fournir le nom de la VM à créer,
+          ex: ansible-playbook playbooks/create_vm.yml -e vm_name=ma-vm
+
+    - name: Créer la VM
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs }}"
+        name: "{{ vm_name }}"
+        datacenter: "{{ vm_datacenter }}"
+        cluster: "{{ vm_cluster }}"
+        folder: "{{ vm_folder }}"
+        guest_id: "{{ vm_guest_id }}"
+        state: "{{ vm_state }}"
+        hardware:
+          num_cpus: "{{ vm_num_cpus }}"
+          memory_mb: "{{ vm_memory_mb }}"
+        disk:
+          - size_gb: "{{ vm_disk_gb }}"
+            type: thin
+            datastore: "{{ vm_datastore }}"
+        networks:
+          - name: "{{ vm_network }}"
+            device_type: vmxnet3
+        wait_for_ip_address: false
+      register: vm_create_result
+
+    - name: Afficher le résultat
+      ansible.builtin.debug:
+        msg: "VM '{{ vm_name }}' : {{ 'créée' if vm_create_result.changed else 'déjà existante, aucun changement' }}"
