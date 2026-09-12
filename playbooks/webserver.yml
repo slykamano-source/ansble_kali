@@ -1,0 +1,6 @@
+---
+- name: Déploiement d'un serveur web Nginx
+  hosts: webservers
+  become: true
+  roles:
+    - webserver

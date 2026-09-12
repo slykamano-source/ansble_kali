@@ -1,0 +1,11 @@
+---
+# defaults file for webserver
+webserver_package: nginx
+webserver_service: nginx
+webserver_port: 80
+webserver_server_name: "_"
+webserver_document_root: /var/www/html
+webserver_index_message: "Bienvenue - déployé par Ansible"
+
+# Ouvrir le port HTTP dans le pare-feu UFW si celui-ci est actif
+webserver_manage_firewall: true
