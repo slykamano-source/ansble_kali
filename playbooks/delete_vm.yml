@@ -1,0 +1,91 @@
+---
+- name: Supprimer proprement une VM du vCenter
+  hosts: vcenter
+  gather_facts: false
+  vars:
+    vm_datacenter: "vSan DataCenter"
+    vm_confirm: false
+  tasks:
+    - name: Vérifier que le nom de la VM a été fourni
+      ansible.builtin.assert:
+        that:
+          - vm_name is defined
+          - vm_name | length > 0
+        fail_msg: >-
+          Merci de fournir le nom de la VM à supprimer,
+          ex: ansible-playbook playbooks/delete_vm.yml -e vm_name=ma-vm -e vm_confirm=true
+
+    - name: Exiger une confirmation explicite (action irréversible)
+      ansible.builtin.assert:
+        that:
+          - vm_confirm | bool
+        fail_msg: >-
+          Suppression annulée : ajoutez -e vm_confirm=true pour confirmer
+          la suppression définitive de la VM '{{ vm_name }}'.
+
+    - name: Rechercher la VM dans le vCenter
+      community.vmware.vmware_vm_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs }}"
+      register: vm_search
+
+    - name: Isoler la VM ciblée
+      ansible.builtin.set_fact:
+        target_vms: "{{ vm_search.virtual_machines | selectattr('guest_name', 'equalto', vm_name) | list }}"
+
+    - name: Ne rien faire si la VM n'existe pas
+      ansible.builtin.debug:
+        msg: "La VM '{{ vm_name }}' n'existe pas, rien à supprimer."
+      when: target_vms | length == 0
+
+    - name: Éteindre proprement la VM si elle est allumée
+      community.vmware.vmware_guest_powerstate:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs }}"
+        name: "{{ vm_name }}"
+        datacenter: "{{ vm_datacenter }}"
+        state: shutdown-guest
+        state_change_timeout: 120
+      when:
+        - target_vms | length > 0
+        - target_vms[0].power_state == 'poweredOn'
+      register: vm_graceful_shutdown
+      ignore_errors: true
+
+    - name: Forcer l'extinction si l'arrêt propre a échoué (VMware Tools absent ?)
+      community.vmware.vmware_guest_powerstate:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs }}"
+        name: "{{ vm_name }}"
+        datacenter: "{{ vm_datacenter }}"
+        state: powered-off
+      when:
+        - target_vms | length > 0
+        - target_vms[0].power_state == 'poweredOn'
+        - vm_graceful_shutdown is failed
+
+    - name: Supprimer la VM
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs }}"
+        name: "{{ vm_name }}"
+        datacenter: "{{ vm_datacenter }}"
+        state: absent
+        force: true
+      when: target_vms | length > 0
+      register: vm_delete_result
+
+    - name: Afficher le résultat
+      ansible.builtin.debug:
+        msg: "VM '{{ vm_name }}' supprimée."
+      when:
+        - target_vms | length > 0
+        - vm_delete_result.changed

@@ -1,0 +1,3 @@
+---
+ansible_password: "{{ vault_linux_vms_ansible_password }}"
+ansible_become_password: "{{ vault_linux_vms_ansible_password }}"
