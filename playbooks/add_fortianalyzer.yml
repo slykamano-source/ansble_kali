@@ -1,0 +1,76 @@
+---
+- name: Ajouter Fortinet FortiAnalyzer à EVE-NG
+  hosts: webservers
+  become: true
+  gather_facts: false
+  vars:
+    fortianalyzer_version: ""
+    fortianalyzer_image_src: ""
+  tasks:
+    - name: Déployer le template EVE-NG (Intel)
+      ansible.builtin.copy:
+        src: files/fortianalyzer/intel.yml
+        dest: /opt/unetlab/html/templates/intel/fortianalyzer.yml
+        owner: root
+        group: root
+        mode: "0644"
+      tags: [template]
+
+    - name: Déployer le template EVE-NG (AMD)
+      ansible.builtin.copy:
+        src: files/fortianalyzer/amd.yml
+        dest: /opt/unetlab/html/templates/amd/fortianalyzer.yml
+        owner: root
+        group: root
+        mode: "0644"
+      tags: [template]
+
+    - name: Avertir si aucune version fournie (étape image ignorée)
+      ansible.builtin.debug:
+        msg: >-
+          Template FortiAnalyzer déployé. Pour ajouter l'image disque une fois
+          téléchargée sur support.fortinet.com (VM Images > KVM), relance avec :
+          ansible-playbook playbooks/add_fortianalyzer.yml -l SRV-EVE-NG
+          -e fortianalyzer_version=7.4.3
+          -e fortianalyzer_image_src=/chemin/local/vers/virtioa.qcow2
+      when: fortianalyzer_version | length == 0
+      tags: [image]
+
+    - name: Créer le dossier image fortianalyzer-{{ fortianalyzer_version }}
+      ansible.builtin.file:
+        path: "/opt/unetlab/addons/qemu/fortianalyzer-{{ fortianalyzer_version }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0775"
+      when: fortianalyzer_version | length > 0
+      tags: [image]
+
+    - name: Copier l'image disque (virtioa.qcow2)
+      ansible.builtin.copy:
+        src: "{{ fortianalyzer_image_src }}"
+        dest: "/opt/unetlab/addons/qemu/fortianalyzer-{{ fortianalyzer_version }}/virtioa.qcow2"
+        owner: root
+        group: root
+        mode: "0644"
+      when:
+        - fortianalyzer_version | length > 0
+        - fortianalyzer_image_src | length > 0
+      tags: [image]
+
+    - name: Avertir si le dossier est créé mais l'image pas encore copiée
+      ansible.builtin.debug:
+        msg: >-
+          Dossier /opt/unetlab/addons/qemu/fortianalyzer-{{ fortianalyzer_version }}/
+          créé. Dépose le/les fichier(s) disque (virtioa.qcow2, et virtiob.qcow2
+          s'il y a un disque de logs séparé) dedans, puis relance ce playbook
+          avec -e fortianalyzer_image_src=... ou exécute juste fixpermissions.
+      when:
+        - fortianalyzer_version | length > 0
+        - fortianalyzer_image_src | length == 0
+      tags: [image]
+
+    - name: Corriger les permissions EVE-NG
+      ansible.builtin.command: /opt/unetlab/wrappers/unl_wrapper -a fixpermissions
+      changed_when: true
+      tags: [template, image]

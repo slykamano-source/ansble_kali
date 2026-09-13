@@ -1,0 +1,21 @@
+---
+# Template EVE-NG "custom" pour Fortinet FortiAnalyzer (non fourni officiellement
+# par EVE-NG, voir dépôt gitlab.com/eve-ng-dev/templates qui n'a que fortinet.yml/FortiGate).
+# Basé sur intel/fortinet.yml (même hyperviseur, mêmes options QEMU éprouvées sur cet hôte),
+# avec CPU/RAM relevés pour correspondre aux prérequis minimums FortiAnalyzer VM.
+# Le dossier image doit être nommé "fortianalyzer-<version>" pour être reconnu.
+type: qemu
+description: Fortinet FortiAnalyzer
+name: FortiAnalyzer
+cpulimit: 1
+icon: Forti_Server.png
+cpu: 2
+ram: 4096
+ethernet: 1
+console: telnet
+qemu_arch: x86_64
+qemu_version: 4.1.0
+qemu_nic: virtio-net-pci
+qemu_options: -machine type=pc,accel=kvm -serial mon:stdio -nographic -no-user-config
+  -nodefaults -display none -vga std -rtc base=utc
+...

@@ -1,0 +1,17 @@
+---
+# Voir intel/fortianalyzer.yml pour le contexte. Variante AMD basée sur amd/fortinet.yml
+# (machine type pc-1.0, pas de qemu_version pinné, comme le reste des templates "amd" de ce dépôt).
+type: qemu
+description: Fortinet FortiAnalyzer
+name: FortiAnalyzer
+cpulimit: 1
+icon: Forti_Server.png
+cpu: 2
+ram: 4096
+ethernet: 1
+console: telnet
+qemu_arch: x86_64
+qemu_nic: virtio-net-pci
+qemu_options: -machine type=pc-1.0,accel=kvm -serial mon:stdio -nographic -no-user-config
+  -nodefaults -display none -vga std -rtc base=utc
+...
